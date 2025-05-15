@@ -26,13 +26,11 @@ RTC_DS1307 rtc;
 // EthernetServer server(80);  // Commenté pour désactiver Ethernet
 
 const int stepsPerRevolution = 2048;  // Nombre de pas pour une révolution complète du moteur
-int stepperSpeed = 30; // Vitesse du moteur en tours par minute
-const int stepDelay = 5; // Délai entre chaque étape
+int stepperSpeed = 15; // Vitesse du moteur en tours par minute
 int angleOuvert = 90;   // Angle pour ouvrir le servo
 int angleFerme = 0;     // Angle pour fermer le servo
 bool estOuvert = false;
 unsigned long lastMotorTime = 0;
-//unsigned long motorInterval = 10UL * 1000;
 unsigned long motorInterval = 8UL * 60 * 60 * 1000;  // 8 heures en ms
 unsigned long motorDuration = 10000; // 10 secondes
 unsigned long lastDebounceTimeInc = 0;
@@ -52,6 +50,7 @@ void setup() {
   servo.write(angleFerme);  // Position fermée du servo
 
   // Configuration des broches
+  pinMode(PIR_PIN, INPUT);     // Capteur PIR
   pinMode(BTN_INC_PIN, INPUT_PULLUP);  // Bouton +
   pinMode(BTN_DEC_PIN, INPUT_PULLUP);  // Bouton -
   pinMode(MOTOR_STEP_PIN, OUTPUT);  // IN1 pour le moteur
@@ -130,20 +129,12 @@ void loop() {
   // Bouton Augmenter
   if (digitalRead(BTN_INC_PIN) == LOW && (millis() - lastDebounceTimeInc) > debounceDelay) {
     lastDebounceTimeInc = millis();
-    if(motorInterval < 24.0 * 60 * 60 * 1000) {
-      motorInterval += 30.0 * 60 * 1000;  // Augmenter l'intervalle de 30 minutes en millisecondes (en double)
+    motorInterval += 30.0 * 60 * 1000;  // Augmenter l'intervalle de 30 minutes en millisecondes (en double)
     
-      Serial.print("Intervalle augmenté à : ");
-      Serial.print(motorInterval / 1000 / 60 / 60);
-      Serial.print("h");
-      unsigned long minutes = motorInterval / 1000 / 60 % 60;
-          if(minutes < 10) {
-            Serial.print("0");
-          }
-          Serial.println(minutes);
-      delay(1000);
-    }
-    
+    Serial.print("Intervalle augmenté à : ");
+    Serial.print(motorInterval);
+    Serial.println(" millisecondes");
+    delay(1000);
   }
 
   // Bouton Diminuer
@@ -153,13 +144,8 @@ void loop() {
         motorInterval -= 30.0 * 60 * 1000;  // Diminuer l'intervalle de 30 minutes en millisecondes (en double)
 
         Serial.print("Intervalle réduit à : ");
-        Serial.print(motorInterval / 1000 / 60 / 60);
-        Serial.print("h");
-        unsigned long minutes = motorInterval / 1000 / 60 % 60;
-        if(minutes < 10) {
-          Serial.print("0");
-        }
-        Serial.println(minutes);
+        Serial.print(motorInterval);
+        Serial.println(" millisecondes");
 
         delay(1000);  // Délais pour éviter les rebonds de bouton
     }
@@ -168,34 +154,16 @@ void loop() {
 
 void activerMoteur() {
   Serial.println("Activation du moteur pas à pas...");
-  lastMotorTime = millis();
+  digitalWrite(MOTOR_DIR_PIN, HIGH);
   for (int i = 0; i < stepsPerRevolution; i++) {
-    tournerUnPas();
-    delay(stepDelay);
+    digitalWrite(MOTOR_STEP_PIN, HIGH);
+    delay(1000 / stepperSpeed);
+    digitalWrite(MOTOR_STEP_PIN, LOW);
+    delay(1000 / stepperSpeed);
   }
+  delay(motorDuration);
+  lastMotorTime = millis();
   Serial.println("Moteur désactivé.");
-}
-
-// Séquence 4 phases pour 28BYJ-48
-void tournerUnPas() {
-  static int stepIndex = 0;
-  const int sequence[8][4] = {
-    {1, 0, 0, 0},
-    {1, 1, 0, 0},
-    {0, 1, 0, 0},
-    {0, 1, 1, 0},
-    {0, 0, 1, 0},
-    {0, 0, 1, 1},
-    {0, 0, 0, 1},
-    {1, 0, 0, 1}
-  };
-
-  digitalWrite(MOTOR_STEP_PIN, sequence[stepIndex][0]);
-  digitalWrite(MOTOR_DIR_PIN, sequence[stepIndex][1]);
-  digitalWrite(MOTOR_IN3_PIN, sequence[stepIndex][2]);
-  digitalWrite(MOTOR_IN4_PIN, sequence[stepIndex][3]);
-
-  stepIndex = (stepIndex + 1) % 8;
 }
 
 long mesurerDistance() {
