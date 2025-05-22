@@ -8,9 +8,9 @@ const cors = require('cors');
 const ARDUINO_IP = 'http://192.168.1.177'; // IP de ton Arduino
 const DB_CONFIG = {
     host: 'localhost',
-    user: 'ton_user',
-    password: 'ton_mot_de_passe',
-    database: 'ta_base'
+    user: 'root',
+    password: '',
+    database: 'object'
 };
 
 const app = express();
@@ -42,19 +42,19 @@ app.post('/set-frequency', (req, res) => {
     }
 
     const milliseconds = minutes * 60 * 1000;
-
-    // Envoi de la fréquence à l'Arduino via HTTP
-    axios.get(`${ARDUINO_IP}/set-frequency?frequency=${milliseconds}`)
-        .then(response => {
-            console.log('Réponse Arduino:', response.data);
-            // Mise à jour de la base de données
-            updateIntervalInDB(milliseconds);
-            res.send("Fréquence mise à jour.");
-        })
-        .catch(err => {
-            console.error("Erreur lors de la mise à jour :", err);
-            res.status(500).send("Erreur lors de la mise à jour.");
-        });
+    updateIntervalInDB(milliseconds);
+    //Envoi de la fréquence à l'Arduino via HTTP
+    // axios.get(`${ARDUINO_IP}/set-frequency?frequency=${milliseconds}`)
+    //     .then(response => {
+    //         console.log('Réponse Arduino:', response.data);
+    //         // Mise à jour de la base de données
+    //         updateIntervalInDB(milliseconds);
+    //         res.send("Fréquence mise à jour.");
+    //     })
+    //     .catch(err => {
+    //         console.error("Erreur lors de la mise à jour :", err);
+    //         res.status(500).send("Erreur lors de la mise à jour.");
+    //     });
 });
 
 // Mise à jour de l'intervalle dans la base de données

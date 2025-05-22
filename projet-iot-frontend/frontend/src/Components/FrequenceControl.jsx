@@ -61,7 +61,7 @@ function FrequenceControl() {
         const intervalMs = totalMinutes * 60 * 1000;  // Convertir en millisecondes
 
         // Envoi de la nouvelle fréquence au backend
-        axios.post('/set-frequency', { minutes: totalMinutes })
+        axios.post('http://localhost:3001/set-frequency', { minutes: totalMinutes })
             .then(response => {
                 alert(`L'alimentation sera programmée pour ${formatTime(totalMinutes)} !`);
             })
