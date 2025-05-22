@@ -1,5 +1,5 @@
 #include <SPI.h>                    // Bibliothèque pour la communication SPI (utilisée par le module RFID)
-// #include <UIPEthernet.h>         // Commenté car on n'utilise pas encore internet
+#include <UIPEthernet.h>         // Commenté car on n'utilise pas encore internet
 #include <MFRC522.h>                // Bibliothèque pour le lecteur RFID RC522
 #include <Servo.h>                  // Bibliothèque pour contrôler un servo moteur
 #include <Wire.h>                   // Bibliothèque pour la communication I2C (utilisée par le module RTC)
@@ -23,7 +23,7 @@
 MFRC522 rfid(RFID_SDA_PIN, RFID_RST_PIN);  // Création de l'objet RFID
 Servo servo;                               // Création de l'objet Servo
 RTC_DS1307 rtc;                            // Création de l'objet horloge RTC
-// EthernetServer server(80);              // Commenté pour désactiver Ethernet pour l'instant
+EthernetServer server(80);              // Commenté pour désactiver Ethernet pour l'instant
 
 // Constantes et variables de configuration
 const int stepsPerRevolution = 2048;       // Nombre de pas pour une révolution complète du moteur
@@ -66,11 +66,12 @@ void setup() {
   pinMode(ECHO_PIN, INPUT);
 
   // Initialisation du serveur Ethernet (commenté)
-  // uint8_t mac[6] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
-  // Ethernet.begin(mac);
-  // server.begin();
-  // Serial.print("Serveur web démarré à l'adresse IP : ");
-  // Serial.println(Ethernet.localIP());
+  uint8_t mac[6] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
+  IPAddress ip(192, 168, 1, 177);
+  Ethernet.begin(mac, ip);
+  server.begin();
+  Serial.print("Serveur web démarré à l'adresse IP : ");
+  erial.println(Ethernet.localIP());
 
   // Initialisation du module RTC
   Wire.begin();
@@ -90,11 +91,51 @@ void setup() {
 void loop() {
   DateTime now = rtc.now();  // Récupération de l'heure actuelle
 
-  // Serveur web (commenté)
-  // EthernetClient client = server.available();
-  // if (client) {
-  //     // Code du serveur web ici
-  // }
+  // Serveur web
+  EthernetClient client = server.available();
+  if (client) {
+    boolean currentLineIsBlank = true;
+    String request = "";
+
+    while (client.connected()) {
+      if (client.available()) {
+        char c = client.read();
+        request += c;
+
+        // Fin de la requête HTTP
+        if (c == '\n' && currentLineIsBlank) {
+          Serial.println("Requête reçue : ");
+          Serial.println(request);
+
+          // Exemple : si le client demande /get-interval
+          if (request.indexOf("GET /get-interval") >= 0) {
+            client.println("HTTP/1.1 200 OK");
+            client.println("Content-Type: text/plain");
+            client.println("Connection: close");
+            client.println();
+            client.println(motorInterval); // envoie l'intervalle actuel
+          }
+
+          // Exemple : si le client demande /open
+          if (request.indexOf("GET /open") >= 0) {
+            activerMoteur();
+            client.println("HTTP/1.1 200 OK");
+            client.println("Content-Type: text/plain");
+            client.println("Connection: close");
+            client.println();
+            client.println("Moteur activé");
+          }
+
+          break;
+        }
+
+        if (c == '\n') currentLineIsBlank = true;
+        else if (c != '\r') currentLineIsBlank = false;
+      }
+      
+    delay(1); // Petite pause
+    client.stop(); // Ferme la connexion
+  }
 
   // Activation automatique du moteur après une période définie
   if ((millis() - lastMotorTime >= motorInterval) && !estOuvert) {

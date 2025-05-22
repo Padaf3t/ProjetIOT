@@ -1,0 +1,82 @@
+/* Style général de la container */
+.container {
+  font-family: sans-serif;
+  max-width: 400px;
+  margin: 20px auto;
+  padding: 20px;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.heading {
+  color: #333;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.label {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  color: #555;
+  font-weight: bold;
+}
+
+.input {
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  width: 60px;
+  text-align: center;
+}
+
+.button {
+  background-color: #5cb85c;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+.button:hover {
+  background-color: #4cae4c;
+}
+
+.paragraph {
+  margin-top: 20px;
+  color: #777;
+  text-align: center;
+  font-style: italic;
+}
+
+.timeValue {
+  margin: 0 0.5em;
+}
+
+/* --- Nouveau style d'erreur --- */
+
+/* Style de l'erreur */
+.error {
+  color: white;  /* Texte en blanc */
+  background-color: #e74c3c;  /* Fond rouge plus clair */
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #c0392b;  /* Bordure rouge foncé */
+  margin: 10px 0;
+  font-size: 14px;
+  text-align: center;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);  /* Ombre légère pour l'erreur */
+}
