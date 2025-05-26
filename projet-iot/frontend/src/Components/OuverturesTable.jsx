@@ -1,58 +1,93 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import styles from './OuverturesTable.module.css';
 
 function OuverturesTable() {
-    const [logs, setLogs] = useState([]);
-    const [error, setError] = useState('');
+  const [logs, setLogs] = useState([]);
+  const [error, setError] = useState('');
+  const ws = useRef(null);
 
-    // Fonction pour récupérer les logs d'ouvertures
+  // Charger les logs au montage
+  useEffect(() => {
     const fetchLogs = async () => {
-        try {
-            const response = await axios.get('http://localhost:3001/logs-ouvertures');
-            setLogs(response.data); // On met à jour l'état avec les logs
-        } catch (err) {
-            setError('Erreur lors de la récupération des logs d\'ouverture');
-            console.error(err);
-        }
+      try {
+        const response = await axios.get('http://localhost:3001/logs-ouvertures');
+        setLogs(response.data);
+      } catch {
+        setError('Erreur lors de la récupération des logs d\'ouverture');
+      }
     };
 
-    // Utilisation de useEffect pour charger les logs lors du montage du composant
-    useEffect(() => {
-        fetchLogs();
-    }, []);
+    fetchLogs();
 
-    return (
-        <div className={styles.container}>
-            <h2 className={styles.heading}>Logs d'Ouverture</h2>
+    // Connexion WebSocket
+    ws.current = new WebSocket('ws://localhost:3001');
+    ws.current.onopen = () => {
+        console.log('Connexion WebSocket ouverte');
+      };
+    ws.current.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      if (message.type === 'update_ouverture') {
+        setLogs(prevLogs => {
+          // Mise à jour si date existe déjà, sinon ajout d’une nouvelle entrée
+          const idx = prevLogs.findIndex(log => log.date_ouv === message.date_ouv);
+          if (idx !== -1) {
+            const updatedLogs = [...prevLogs];
+            updatedLogs[idx].nb_ouv = message.nb_ouv;
+            return updatedLogs;
+          } else {
+            return [{ date_ouv: message.date_ouv, nb_ouv: message.nb_ouv }, ...prevLogs];
+          }
+        });
+      }
+    };
 
-            {/* Affichage des erreurs éventuelles */}
-            {error && <div className={styles.error}>{error}</div>}
+    //ws.current.onerror = () => setError('Erreur de connexion WebSocket');
+    ws.current.onclose = () => {
+        console.log('Connexion WebSocket fermée');
+      };
+      return () => {
+        if (ws.current) {
+          ws.current.close();
+        }
+      };
+  }, []);
 
-            <table className={styles.table}>
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Nombre d'ouvertures</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {logs.length > 0 ? (
-                        logs.map((log, index) => (
-                            <tr key={index}>
-                                <td>{log.date_ouv}</td>
-                                <td>{log.nb_ouv}</td>
-                            </tr>
-                        ))
-                    ) : (
-                        <tr>
-                            <td colSpan="2">Aucun log trouvé</td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
-        </div>
-    );
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      ws.current = new WebSocket('ws://localhost:3001');
+      // ... setup handlers ici
+    }, 500); // 500ms delay
+  
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <div className={styles.container}>
+      <h2 className={styles.heading}>Logs d'Ouverture</h2>
+      {error && <div className={styles.error}>{error}</div>}
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Nombre d'ouvertures</th>
+          </tr>
+        </thead>
+        <tbody>
+          {logs.length > 0 ? (
+            logs.map((log, i) => (
+              <tr key={i}>
+                <td>{log.date_ouv}</td>
+                <td>{log.nb_ouv}</td>
+              </tr>
+            ))
+          ) : (
+            <tr><td colSpan="2">Aucun log trouvé</td></tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 export default OuverturesTable;
