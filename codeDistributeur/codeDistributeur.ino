@@ -36,7 +36,8 @@ RTC_DS1307 rtc;                           // Création du module RTC
 // === Variables globales ===
 bool estOuvert = false;                  // État du couvercle : false = fermé, true = ouvert
 unsigned long lastMotorTime = 0;         // Temps de la dernière activation du moteur
-unsigned long motorInterval = 8UL * 60 * 60 * 1000; // Fréquence de distribution de nourriture (8h en ms)
+//unsigned long motorInterval = 8UL * 60 * 60 * 1000; // Fréquence de distribution de nourriture (8h en ms)
+unsigned long motorInterval = 20UL * 1000;
 unsigned long motorDuration = 10000;     // Durée de rotation du moteur (pas utilisée directement)
 
 // Séquence de pas pour le moteur pas à pas (stockée en mémoire flash pour optimiser la RAM)
